@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot - Sənəd Əsaslı AI Köməkçisi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            min-height: 400px;
+            max-height: 500px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .bot-message {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            margin-right: auto;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            padding: 12px 20px;
+            resize: none;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px 20px;
+        }
+
+        .welcome-message i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .typing {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-robot me-3"></i>RAG Chatbot</h1>
+        <p>Sənədləriniz əsasında AI köməkçisi</p>
+        <a href="/documents" class="nav-btn">
+            <i class="fas fa-file-alt me-2"></i>Sənədləri İdarə Et
+        </a>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-messages" id="chatMessages">
+        <div class="welcome-message">
+            <i class="fas fa-comments"></i>
+            <h4>Xoş gəlmisiniz!</h4>
+            <p>Sənədləriniz barədə hər hansı sual verə bilərsiniz. AI köməkçisi yüklənilmiş sənədlər əsasında cavab verəcək.</p>
+            <small class="text-muted">Başlamaq üçün sənədlərinizi yükləyin və sual verin.</small>
+        </div>
+    </div>
+
+    <!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator">
+        <i class="fas fa-robot me-2"></i>Cavab hazırlanır...
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+        <textarea
+            class="form-control message-input"
+            id="messageInput"
+            rows="1"
+            placeholder="Sualınızı yazın..."
+            maxlength="1000"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Send message on Enter (but Shift+Enter for new line)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // Clear welcome message
+        const welcomeMessage = chatMessages.querySelector('.welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+
+        // Add user message
+        addMessage(message, 'user');
+
+        // Clear input
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+
+        // Disable send button and show typing
+        sendBtn.disabled = true;
+        typingIndicator.style.display = 'block';
+
+        // Send request to server
+        fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({message: message})
+        })
+        .then(response => response.json())
+        .then(data => {
+            typingIndicator.style.display = 'none';
+            sendBtn.disabled = false;
+
+            if (data.error) {
+                addMessage('Xəta baş verdi: ' + data.error, 'bot');
+            } else {
+                addMessage(data.response, 'bot');
+            }
+        })
+        .catch(error => {
+            typingIndicator.style.display = 'none';
+            sendBtn.disabled = false;
+            console.error('Error:', error);
+            addMessage('Cavab alınarkən xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.', 'bot');
+        });
+    }
+
+    function addMessage(text, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}-message`;
+
+        if (type === 'bot') {
+            // Convert markdown-like formatting to HTML
+            text = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        messageDiv.innerHTML = text;
+        chatMessages.appendChild(messageDiv);
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Focus on input when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        messageInput.focus();
+    });
+</script>
+</body>
+</html>

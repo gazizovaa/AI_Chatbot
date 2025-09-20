@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sənədlərin İdarəedilməsi - RAG Sistemi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .documents-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: rgba(102, 126, 234, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .document-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .document-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(238, 90, 82, 0.3);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .processing {
+            animation: pulse 1.5s infinite;
+        }
+
+        .file-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        .file-size {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .refresh-btn {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="header">
+        <h1><i class="fas fa-file-alt me-3"></i>Sənədlərin İdarəedilməsi</h1>
+        <p>Sənədlərinizi yükləyin və sisteminizi konfiqurasiya edin</p>
+        <a href="/" class="nav-btn">
+            <i class="fas fa-comments me-2"></i>Chatbot-a Qayıt
+        </a>
+    </div>
+
+    <div class="upload-section">
+        <h3><i class="fas fa-cloud-upload-alt me-2"></i>Sənəd Yüklə</h3>
+        <div class="upload-area" id="uploadArea">
+            <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+            <h5>Faylları buraya sürükləyin və ya seçin</h5>
+            <p class="text-muted">Dəstəklənən formatlar: PDF, DOCX, TXT, MD</p>
+            <input type="file"
+                   id="fileInput"
+                   accept=".pdf,.docx,.txt,.md"
+                   multiple
+                   style="display: none;">
+            <button type="button" class="btn btn-primary mt-3" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-folder-open me-2"></i>Fayl Seç
+            </button>
+        </div>
+
+        <div class="mt-4" id="uploadProgress" style="display: none;">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <small class="text-muted mt-2 d-block">Sənədlər emal edilir...</small>
+            <div id="fileUploadStatus" class="mt-2 small"></div>
+        </div>
+    </div>
+
+    <div class="documents-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3><i class="fas fa-folder me-2"></i>Yüklənilmiş Sənədlər</h3>
+            <span class="refresh-btn" onclick="loadDocuments()" title="Yenilə">
+                <i class="fas fa-sync-alt"></i>
+            </span>
+        </div>
+        <div id="documentsList">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                <p>Hələlik yüklənilmiş sənəd yoxdur</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="successToast" class="toast" role="alert">
+        <div class="toast-header bg-success text-white">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong class="me-auto">Uğur</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="successMessage"></div>
+    </div>
+
+    <div id="errorToast" class="toast" role="alert">
+        <div class="toast-header bg-danger text-white">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong class="me-auto">Xəta</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="errorMessage"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    let fileInput = document.getElementById('fileInput');
+    let uploadArea = document.getElementById('uploadArea');
+    let uploadProgress = document.getElementById('uploadProgress');
+    let documentsList = document.getElementById('documentsList');
+    let fileUploadStatus = document.getElementById('fileUploadStatus');
+
+    // File upload functionality
+    fileInput.addEventListener('change', handleFileSelect);
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function (e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function (e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    function handleFileSelect() {
+        const files = fileInput.files;
+        if (files.length === 0) return;
+
+        uploadFiles(files);
+    }
+
+    async function uploadFiles(files) {
+        // Show progress
+        uploadProgress.style.display = 'block';
+        const progressBar = uploadProgress.querySelector('.progress-bar');
+        progressBar.style.width = '20%';
+        fileUploadStatus.innerHTML = '';
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('file', files[i]);
+        }
+
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            progressBar.style.width = '80%';
+
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+                progressBar.style.width = '0%';
+                fileInput.value = ''; // Clear file input
+
+                if (response.ok && data.message) {
+                    showSuccess(data.message);
+                } else if (data.error) {
+                    showError(data.error);
+                }
+
+                loadDocuments();
+            }, 500);
+
+        } catch (error) {
+            uploadProgress.style.display = 'none';
+            progressBar.style.width = '0%';
+            console.error('Upload error:', error);
+            showError('Fayllar yüklənərkən xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.');
+        }
+    }
+
+    function loadDocuments() {
+        // Show loading state
+        documentsList.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yüklənir...</span>
+                </div>
+                <p class="mt-2 text-muted">Sənədlər yüklənir...</p>
+            </div>
+        `;
+
+        fetch('/documents/list')
+        .then(response => {
+            if (!response.ok) {
+                // Try to get files from uploads folder directly
+                return fetch('/documents/simple-list');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.error) {
+                console.warn('Xəta:', data.error);
+                // Try to get files from uploads folder directly
+                fetch('/documents/simple-list')
+                    .then(response => response.json())
+                    .then(simpleData => displayDocuments(simpleData || []))
+                    .catch(() => displayDocuments([]));
+            } else {
+                displayDocuments(data || []);
+            }
+        })
+        .catch(error => {
+            console.error('Sənədlər siyahısı yüklənilərkən xəta:', error);
+            // Try to get files from uploads folder directly
+            fetch('/documents/simple-list')
+                .then(response => response.json())
+                .then(simpleData => displayDocuments(simpleData || []))
+                .catch(() => {
+                    showError('Sənədlər siyahısı yüklənilərkən xəta baş verdi.');
+                    displayDocuments([]);
+                });
+        });
+    }
+
+    function displayDocuments(documents) {
+        if (!documents || documents.length === 0) {
+            documentsList.innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <p>Hələlik yüklənilmiş sənəd yoxdur</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `<div class="row mb-3">
+            <div class="col">
+                <h5><i class="fas fa-list me-2"></i>Cəmi ${documents.length} sənəd</h5>
+            </div>
+        </div>`;
+
+        documents.forEach(doc => {
+            const docId = doc.doc_id || doc.id || 'unknown';
+            const filename = doc.filename || doc.name || 'Naməlum fayl';
+            const createdAt = doc.created_at || doc.uploaded_at || new Date().toISOString();
+            const fileSize = doc.size ? formatFileSize(doc.size) : '';
+            const fileIcon = getFileIcon(filename);
+
+            html += `
+                <div class="document-card" data-doc-id="${docId}">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-1">
+                                <i class="${fileIcon} me-2 text-primary"></i>
+                                ${filename}
+                            </h6>
+                            <div class="d-flex">
+                                <small class="text-muted me-3">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    ${new Date(createdAt).toLocaleDateString('az-AZ')}
+                                </small>
+                                ${fileSize ? `<small class="file-size"><i class="fas fa-database me-1"></i>${fileSize}</small>` : ''}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-sm btn-danger" onclick="deleteDocument('${docId}', '${filename.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-trash me-1"></i>Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        documentsList.innerHTML = html;
+    }
+
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        switch(ext) {
+            case 'pdf': return 'fas fa-file-pdf';
+            case 'docx': return 'fas fa-file-word';
+            case 'txt': return 'fas fa-file-alt';
+            case 'md': return 'fas fa-file-code';
+            default: return 'fas fa-file';
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function deleteDocument(docId, filename) {
+        if (!confirm('"' + filename + '" adlı sənədi silmək istədiyinizə əminsiniz?')) {
+            return;
+        }
+
+        fetch(`/documents/${docId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showError(data.error);
+            } else {
+                showSuccess(data.message || 'Sənəd uğurla silindi.');
+                loadDocuments(); // Refresh documents list
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting document:', error);
+            showError('Sənəd silinərkən xəta baş verdi.');
+        });
+    }
+
+    function showSuccess(message) {
+        const successToast = document.getElementById('successToast');
+        const successMessage = document.getElementById('successMessage');
+        successMessage.innerHTML = message;
+
+        const toast = new bootstrap.Toast(successToast);
+        toast.show();
+    }
+
+    function showError(message) {
+        const errorToast = document.getElementById('errorToast');
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.innerHTML = message;
+
+        const toast = new bootstrap.Toast(errorToast);
+        toast.show();
+    }
+
+    // Load documents when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        loadDocuments();
+    });
+</script>
+</body>
+</html>
