@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4SİM - Sənəd Əsaslı Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --dark-color: #2e59d9;
+            --light-color: #f8f9fc;
+            --accent-color: #36b9cc;
+        }
+
+        body {
+            background-color: var(--light-color);
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .chat-header {
+            background: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #e3e6f0;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header h4 {
+            margin-bottom: 0;
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .user {
+            align-self: flex-end;
+            text-align: right;
+            position: relative;
+        }
+
+        .bot {
+            align-self: flex-start;
+            text-align: left;
+        }
+
+        .user .message-content {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 18px 18px 5px 18px;
+            max-width: 100%;
+            display: inline-block;
+        }
+
+        .bot .message-content {
+            background-color: #f1f3f9;
+            color: #333;
+            padding: 12px 16px;
+            border-radius: 18px 18px 18px 5px;
+            max-width: 100%;
+            display: inline-block;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .message-actions {
+            display: none;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            gap: 5px;
+            right: 100%;
+            padding-right: 10px;
+        }
+
+        .user:hover .message-actions {
+            display: flex;
+        }
+
+        .action-btn {
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+
+        .action-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .edit-btn:hover {
+            color: #007bff;
+        }
+
+        .delete-btn:hover {
+            color: #dc3545;
+        }
+
+        .input-container {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 15px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .sources-container {
+            background-color: #eef1f9;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            word-wrap: break-word;
+        }
+
+        .source-item {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        .source-item:hover {
+            text-decoration: underline;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            background-color: #f1f3f9;
+            padding: 12px 18px;
+            border-radius: 18px;
+            color: #666;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #999;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .suggestion-chip {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-chip:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .message {
+                max-width: 90%;
+            }
+
+            .main-container {
+                padding: 10px;
+            }
+
+            .message-actions {
+                display: flex;
+                position: static;
+                transform: none;
+                justify-content: flex-end;
+                padding-right: 0;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="fas fa-robot me-2"></i>4SİM Chatbot
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-home me-1"></i>Əsas Səhifə
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/documents_page">
+                        <i class="fas fa-file-alt me-1"></i>Sənədlər
+                    </a>
+                </li>
+            </ul>
+            <span class="navbar-text">
+                <i class="fas fa-database me-1"></i>
+                <span id="document-count">0</span> sənəd yüklənib
+            </span>
+        </div>
+    </div>
+</nav>
+
+<div class="main-container">
+    <div class="chat-header">
+        <h4 class="mb-1">
+            <i class="fas fa-robot text-primary me-2"></i>Sənəd Əsaslı Köməkçi
+        </h4>
+        <p class="text-muted mb-0">Sənədlərinizə əsaslanan suallarınızı verin</p>
+    </div>
+
+    <div id="chat-container" class="chat-container">
+        <div class="welcome-card" id="welcome-card">
+            <h5><i class="fas fa-hand-wave me-2"></i>Salam! Mən 4SİM köməkçisiyəm</h5>
+            <p class="mb-2">Sənədlərinizə əsaslanaraq suallarınıza cavab verə bilərəm. Aşağıdakı suallardan birini seçin və ya öz sualınızı yazın.</p>
+            <div class="suggestion-chips">
+                <button class="suggestion-chip" data-question="Sənədlərdə əsas mövzular nələrdir?">
+                    Əsas mövzular nələrdir?
+                </button>
+                <button class="suggestion-chip" data-question="Mənə sənədlərin xülasəsini ver">
+                    Sənədlərin xülasəsi
+                </button>
+                <button class="suggestion-chip" data-question="Əhəmiyyətli bölmələri göstər">
+                    Əhəmiyyətli bölmələr
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-spinner text-center my-3" id="loading-spinner" style="display: none;">
+        <div class="typing-indicator">
+            <span>Cavab hazırlanır</span>
+            <div class="ms-2">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <form id="chat-form">
+            <div class="input-group">
+                <input type="text" id="user-input" class="form-control"
+                       placeholder="Sualınızı buraya yazın..."
+                       aria-label="Sualınızı yazın...">
+                <button class="btn btn-primary" type="submit" id="send-button">
+                    <i class="fas fa-paper-plane me-1"></i>Göndər
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatContainer = document.getElementById('chat-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const documentCount = document.getElementById('document-count');
+        const welcomeCard = document.getElementById('welcome-card');
+
+        function updateDocumentCount() {
+            fetch('/api/documents')
+                .then(response => response.json())
+                .then(data => {
+                    documentCount.textContent = Object.keys(data).length;
+                })
+                .catch(error => {
+                    console.error('Error fetching document count:', error);
+                });
+        }
+
+        // Mesajı göstərmək üçün köməkçi funksiya
+        function displayMessage(text, sender, sources = null) {
+            welcomeCard.style.display = 'none';
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content');
+
+            // Markdown formatını HTML-ə çevirmək
+            fetch('/convert_markdown', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ markdown_text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                messageContent.innerHTML = data.html_text;
+
+                if (sources && sources.length > 0) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'sources-container';
+                    sourcesDiv.innerHTML = '<strong>Mənbə:</strong> ';
+
+                    sources.forEach((source, index) => {
+                        const docId = source.doc_id;
+                        const link = document.createElement('a');
+                        link.className = 'source-item';
+                        link.href = `/document_context/${docId}`;
+                        link.textContent = source.title || `Sənəd ${index + 1}`;
+                        link.target = '_blank';
+                        sourcesDiv.appendChild(link);
+                    });
+                    messageContent.appendChild(sourcesDiv);
+                }
+
+                if (sender === 'user') {
+                    const actions = document.createElement('div');
+                    actions.classList.add('message-actions');
+                    actions.innerHTML = `
+                        <i class="fas fa-edit action-btn edit-btn"></i>
+                        <i class="fas fa-trash-alt action-btn delete-btn"></i>
+                    `;
+                    actions.querySelector('.edit-btn').onclick = () => editMessage(messageElement);
+                    actions.querySelector('.delete-btn').onclick = () => deleteMessage(messageElement);
+                    messageElement.appendChild(actions);
+                }
+
+                messageElement.appendChild(messageContent);
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                saveChatHistory();
+            })
+            .catch(error => {
+                console.error('Markdown conversion error:', error);
+                messageContent.innerHTML = `<p>${text}</p>`;
+                messageElement.appendChild(messageContent);
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                saveChatHistory();
+            });
+        }
+
+        function loadChatHistory() {
+            const history = localStorage.getItem('chatHistory');
+            if (history) {
+                const messages = JSON.parse(history);
+                if (messages.length > 0) {
+                    welcomeCard.style.display = 'none';
+                    messages.forEach(msg => {
+                        displayMessage(msg.text, msg.sender, msg.sources);
+                    });
+                }
+            }
+        }
+
+        function saveChatHistory() {
+            const messages = [];
+            document.querySelectorAll('#chat-container .message').forEach(msgEl => {
+                const sender = msgEl.classList.contains('user') ? 'user' : 'bot';
+                const text = msgEl.querySelector('.message-content p') ? msgEl.querySelector('.message-content p').innerHTML : msgEl.querySelector('.message-content').innerHTML;
+                let sources = null;
+                const sourcesDiv = msgEl.querySelector('.sources-container');
+                if (sourcesDiv) {
+                    sources = [];
+                    sourcesDiv.querySelectorAll('a').forEach(link => {
+                        const docId = link.getAttribute('href').split('/').pop();
+                        sources.push({ title: link.textContent, doc_id: docId });
+                    });
+                }
+                messages.push({ sender, text, sources });
+            });
+            localStorage.setItem('chatHistory', JSON.stringify(messages));
+        }
+
+        // REDAKTƏ VƏ SİL MƏNTİQİ BURADA ƏLAVƏ EDİLİR
+        function editMessage(messageElement) {
+            const messageContentDiv = messageElement.querySelector('.message-content');
+            const originalText = messageContentDiv.textContent.trim();
+            const newText = prompt("Mesajınızı redaktə edin:", originalText);
+
+            if (newText !== null && newText.trim() !== "" && newText.trim() !== originalText) {
+                messageContentDiv.innerHTML = `<p>${newText.trim()}</p>`;
+                saveChatHistory();
+                alert("Mesaj redaktə edildi. Yenidən göndərmək üçün mətni kopyalayıb giriş qutusuna yapışdıra bilərsiniz.");
+            }
+        }
+
+        function deleteMessage(messageElement) {
+            if (confirm("Bu mesajı silmək istədiyinizə əminsiniz?")) {
+                messageElement.remove();
+                saveChatHistory();
+                if (chatContainer.children.length === 0) {
+                    welcomeCard.style.display = 'block';
+                }
+            }
+        }
+
+        document.querySelectorAll('.suggestion-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                userInput.value = chip.getAttribute('data-question');
+                chatForm.dispatchEvent(new Event('submit', {cancelable: true}));
+            });
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userMessage = userInput.value.trim();
+            if (!userMessage) return;
+
+            displayMessage(userMessage, 'user');
+            userInput.value = '';
+            loadingSpinner.style.display = 'block';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({message: userMessage})
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    displayMessage(data.response, 'bot', data.sources);
+                } else {
+                    displayMessage(`Xəta: ${data.error}`, 'bot');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                displayMessage('Serverlə əlaqə qurularkən xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.', 'bot');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit', {cancelable: true}));
+            }
+        });
+
+        updateDocumentCount();
+        loadChatHistory();
+    });
+</script>
+</body>
+</html>
